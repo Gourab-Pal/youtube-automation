@@ -196,7 +196,7 @@ public class TestCases extends ExcelDataProvider { // Lets us read the data
                         System.out.println("Title --> " + title);
                         System.out.println("Body --> " + body);
                         // System.out.println("Like counts --> " + likes);
-                        //new
+                        //new c
                 }
                 System.out.println("Total like count for first three news --> " + totalLikes);
 
