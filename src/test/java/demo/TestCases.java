@@ -162,6 +162,7 @@ public class TestCases extends ExcelDataProvider { // Lets us read the data
                 soft.assertTrue(songNumber <= 50);
 
                 soft.assertAll();
+                //
         }
 
         @Test(priority = 4)
