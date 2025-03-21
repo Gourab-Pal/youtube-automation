@@ -1,6 +1,7 @@
 package demo;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -14,6 +15,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import demo.utils.ExcelDataProvider;
+import demo.utils.ExcelReaderUtil;
 // import io.github.bonigarcia.wdm.WebDriverManager;
 import demo.wrappers.Wrappers;
 
@@ -76,6 +79,8 @@ public class TestCases extends ExcelDataProvider { // Lets us read the data
 
                 Assert.assertTrue(driver.getCurrentUrl().contains("about"));
 
+                System.out.println("Youtube about --> "
+                                + driver.findElement(By.xpath("//section[@class='ytabout__content']/h1")).getText());
                 // printing the messages
                 List<WebElement> msgElements = driver.findElements(By.xpath("//section[@class='ytabout__content']//p"));
                 for (WebElement msgElement : msgElements) {
@@ -129,6 +134,7 @@ public class TestCases extends ExcelDataProvider { // Lets us read the data
 
         @Test(priority = 3)
         public void testCase03() {
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
                 // opening the homepage url
                 driver.get("https://www.youtube.com/");
 
@@ -140,11 +146,11 @@ public class TestCases extends ExcelDataProvider { // Lets us read the data
                 WebElement musicParent = Wrappers.getParentMusicSection(driver, sectionName);
 
                 // last musicCard
-                WebElement lastMusicCard = musicParent.findElement(
-                                By.xpath(".//div[@id='contents']//ytd-rich-item-renderer[not(@hidden)][last()]"));
+                WebElement lastMusicCard = wait.until(ExpectedConditions.visibilityOf(musicParent.findElement(
+                                By.xpath(".//div[@id='contents']//ytd-rich-item-renderer[not(@hidden)][last()]"))));
 
                 // playlist name
-                String playlistName = lastMusicCard.findElement(By.xpath(".//h3/a/span")).getText();
+                String playlistName = wait.until(ExpectedConditions.visibilityOf(lastMusicCard.findElement(By.xpath(".//h3/span")))).getText();
                 System.out.println("Name of the platlist --> " + playlistName);
 
                 // number of songs
@@ -191,15 +197,70 @@ public class TestCases extends ExcelDataProvider { // Lets us read the data
                                 totalLikes = totalLikes + Integer.parseInt(likes);
                         } catch (Exception e) {
                                 // TODO: handle exception
-                                
+
                         }
                         System.out.println("Title --> " + title);
                         System.out.println("Body --> " + body);
                         // System.out.println("Like counts --> " + likes);
-                        //new c
+                        // new code
                 }
                 System.out.println("Total like count for first three news --> " + totalLikes);
 
+        }
+
+        @Test(priority = 5, dataProvider = "excelData", dataProviderClass = ExcelDataProvider.class)
+        public void testCase05(String myData) throws InterruptedException {
+                // opening the homepage url
+                driver.get("https://www.youtube.com/");
+
+                // sending search text
+                Wrappers.enterText(driver, By.xpath("//input[@name='search_query']"), myData);
+
+                Wrappers.clickOnElement(driver, By.xpath("//yt-searchbox//button[@aria-label='Search']"));
+
+                // (//span[contains(@class, 'inline-metadata-item') and contains(text(),
+                // 'views')])[26]
+
+                long target = 100000000;
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+                JavascriptExecutor js = (JavascriptExecutor) driver;
+                int currentContentsNumber = driver.findElements(By.xpath(
+                                "(//span[contains(@class, 'inline-metadata-item') and contains(text(), 'views')])"))
+                                .size();
+                long totalViewCount = 0;
+                int xpathIndex = 1;
+                while (true) {
+                        if (xpathIndex < currentContentsNumber) {
+                                String xpath = "(//span[contains(@class, 'inline-metadata-item') and contains(text(), 'views')])["
+                                                + xpathIndex + "]";
+                                WebElement elem = wait
+                                                .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+                                js.executeScript("arguments[0].scrollIntoView()", elem);
+                                String viewRaw = elem.getText().replace(" views", "");
+                                long currentElementViewCount = Wrappers.formatNumbers(viewRaw);
+                                totalViewCount = totalViewCount + currentElementViewCount;
+                                xpathIndex++;
+
+                        } else {
+                                String xpath = "(//span[contains(@class, 'inline-metadata-item') and contains(text(), 'views')])["
+                                                + xpathIndex + "]";
+                                WebElement elem = wait
+                                                .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+                                js.executeScript("arguments[0].scrollIntoView()", elem);
+                                String viewRaw = elem.getText().replace(" views", "");
+                                long currentElementViewCount = Wrappers.formatNumbers(viewRaw);
+                                totalViewCount = totalViewCount + currentElementViewCount;
+                                currentContentsNumber = driver.findElements(By.xpath(
+                                                "(//span[contains(@class, 'inline-metadata-item') and contains(text(), 'views')])"))
+                                                .size();
+                                xpathIndex++;
+                        }
+                        // System.out.println("Current total view count --> " + totalViewCount);
+                        if (totalViewCount > target) {
+                                // System.out.println("Final view count --> " + totalViewCount);
+                                break;
+                        }
+                }
         }
 
         @AfterTest

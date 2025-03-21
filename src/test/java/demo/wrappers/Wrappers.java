@@ -65,4 +65,28 @@ public class Wrappers {
             return null;
         }
     }
+
+    public static void enterText(ChromeDriver driver, By locator, String text) {
+        try {
+            WebElement elem = driver.findElement(locator);
+            elem.clear();
+            elem.sendKeys(text);
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
+    }
+
+    public static long formatNumbers(String str) {
+        char lastChar = str.charAt(str.length() - 1);
+        double floatValue = Double.parseDouble(str.substring(0, str.length() - 1));
+
+        if(lastChar == 'K') {
+            return (long) floatValue*1000;
+        }
+        if(lastChar == 'M') {
+            return (long) floatValue*1000000;
+        }
+        return (long) floatValue;
+    }
 }
